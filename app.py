@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -210,23 +211,25 @@ def reconcile_transactions(
 
 def main():
     st.set_page_config(page_title="Conciliador de Fatura x Mobills", layout="wide")
-    st.title("üîç Conciliador de Fatura de Cart√£o x Mobills")
+    # Use an ASCII-only title to avoid encoding issues during deployment
+    st.title("Conciliador de Fatura de Cartao x Mobills")
+    # Use ASCII-only text for the introductory section to avoid encoding problems
     st.markdown(
         """
-        Este aplicativo permite comparar os lan√ßamentos da fatura do seu cart√£o de cr√©dito
-        com os lan√ßamentos exportados do Mobills. Ele identifica diferen√ßas e ajuda a
-        garantir que ambos os relat√≥rios estejam conciliados.
+        Este aplicativo permite comparar os lancamentos da fatura do seu cartao de credito
+        com os lancamentos exportados do Mobills. Ele identifica diferencas e ajuda a
+        garantir que ambos os relatorios estejam conciliados.
 
         **Como funciona:**
 
-        1. **Envie os arquivos** da fatura e do Mobills. S√£o aceitos formatos CSV, XLSX,
-           XLS e PDF. O aplicativo tentar√° extrair as colunas de data e valor automaticamente.
-           Caso n√£o consiga, voc√™ poder√° selecion√°-las manualmente.
-        2. **Revise as colunas detectadas** e ajuste se necess√°rio.
-        3. **Clique em ‚ÄúConciliar‚Äù** para gerar o relat√≥rio de inconsist√™ncias.
+        1. **Envie os arquivos** da fatura e do Mobills. Sao aceitos formatos CSV, XLSX,
+           XLS e PDF. O aplicativo tentara extrair as colunas de data e valor automaticamente.
+           Caso nao consiga, voce podera seleciona-las manualmente.
+        2. **Revise as colunas detectadas** e ajuste se necessario.
+        3. **Clique em "Conciliar"** para gerar o relatorio de inconsistencias.
 
-        As transa√ß√µes s√£o consideradas conciliadas somente quando a **data e o valor
-        coincidem exatamente**. Valores duplicados no mesmo dia s√£o tratados de forma
+        As transacoes sao consideradas conciliadas somente quando a **data e o valor
+        coincidem exatamente**. Valores duplicados no mesmo dia sao tratados de forma
         individual.
         """
     )
