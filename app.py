@@ -9,8 +9,8 @@ import re
 """
 An application for reconciling credit card statements against Mobills exports.
 
-This Streamlit web app allows a user to upload two files ‚Äì one representing
-their monthly credit card statement and another representing a Mobills export ‚Äì
+This Streamlit web app allows a user to upload two files – one representing
+their monthly credit card statement and another representing a Mobills export –
 and then compares the two sets of transactions.  It identifies entries that
 appear in Mobills but not on the statement, as well as entries that appear on
 the statement but not in Mobills.  A reconciliation summary table details
@@ -19,14 +19,14 @@ unmatched transactions and provides totals for each source.
 The app supports CSV, Excel (XLS/XLSX) and PDF documents.  When PDF files
 are uploaded a simple text extraction routine attempts to identify rows
 containing dates and currency values using regular expressions.  While this
-automatic extraction works on many well‚Äëformatted card statements, users
+automatic extraction works on many well‑formatted card statements, users
 should verify the results and adjust the date/value column selections if
 necessary.  CSV and Excel files are parsed with pandas.
 
 To ensure accurate matching, dates are normalised to datetime objects and
 values are converted to floating point numbers.  Transactions match only
 when both the date and the value coincide exactly.  Duplicate values on
-the same day are handled correctly ‚Äì the algorithm pairs each statement row
+the same day are handled correctly – the algorithm pairs each statement row
 with the first unmatched Mobills row of equal date and value.
 """
 
@@ -36,13 +36,13 @@ def parse_csv_or_excel(uploaded_file: io.BytesIO) -> pd.DataFrame:
 
     This helper attempts to handle CSV files that may use semicolons as
     delimiters (common in Brazilian exports) as well as standard comma
-    delimited files.  It tries both UTF‚Äë8 and Latin‚Äë1 encodings.  For
+    delimited files.  It tries both UTF‑8 and Latin‑1 encodings.  For
     Excel files it relies on pandas' read_excel.
 
     Parameters
     ----------
     uploaded_file : BytesIO
-        File‚Äëlike object returned by st.file_uploader.
+        File‑like object returned by st.file_uploader.
 
     Returns
     -------
@@ -234,9 +234,9 @@ def main():
         """
     )
 
-    st.sidebar.header("üóÇÔ∏è Upload de Arquivos")
-    fatura_file = st.sidebar.file_uploader("Fatura do cart√£o", type=["csv", "xls", "xlsx", "pdf"])
-    mobills_file = st.sidebar.file_uploader("Relat√≥rio do Mobills", type=["csv", "xls", "xlsx", "pdf"])
+    st.sidebar.header("🗂️ Upload de Arquivos")
+    fatura_file = st.sidebar.file_uploader("Fatura do cartão", type=["csv", "xls", "xlsx", "pdf"])
+    mobills_file = st.sidebar.file_uploader("Relatório do Mobills", type=["csv", "xls", "xlsx", "pdf"])
 
     df_fatura, df_mobills = None, None
 
@@ -246,7 +246,7 @@ def main():
             df_fatura = extract_transactions_from_pdf(fatura_file)
         else:
             df_fatura = parse_csv_or_excel(fatura_file)
-        st.write("### Pr√©‚Äëvisualiza√ß√£o da Fatura", df_fatura.head())
+        st.write("### Pré‑visualização da Fatura", df_fatura.head())
 
     if mobills_file is not None:
         ext = mobills_file.name.lower().split(".")[-1]
@@ -254,11 +254,11 @@ def main():
             df_mobills = extract_transactions_from_pdf(mobills_file)
         else:
             df_mobills = parse_csv_or_excel(mobills_file)
-        st.write("### Pr√©‚Äëvisualiza√ß√£o do Mobills", df_mobills.head())
+        st.write("### Pré‑visualização do Mobills", df_mobills.head())
 
     # If both dataframes exist, allow column selection
     if df_fatura is not None and df_mobills is not None and not df_fatura.empty and not df_mobills.empty:
-        st.sidebar.header("üõ†Ô∏è Configura√ß√£o de Colunas")
+        st.sidebar.header("🛠️ Configuração de Colunas")
         # Attempt to detect columns automatically
         default_date_f = detect_column(df_fatura, ["data", "date", "dia"])
         default_value_f = detect_column(df_fatura, ["valor", "value", "amount"])
@@ -271,30 +271,30 @@ def main():
         value_col_m = st.sidebar.selectbox("Coluna de Valor (Mobills)", df_mobills.columns, index=(df_mobills.columns.tolist().index(default_value_m) if default_value_m in df_mobills.columns else 1 if df_mobills.shape[1] > 1 else 0))
 
         if st.sidebar.button("Conciliar"):
-            with st.spinner("Conciliando... Aguarde um momentinho enquanto alinhamos as estrelas üîÆ"):
+            with st.spinner("Conciliando... Aguarde um momentinho enquanto alinhamos as estrelas 🔮"):
                 unmatched_f, unmatched_m, total_f, total_m, difference = reconcile_transactions(
                     df_fatura, df_mobills, date_col_f, value_col_f, date_col_m, value_col_m
                 )
-            st.success("Concilia√ß√£o finalizada!")
-            st.write("## Resultados da Concilia√ß√£o")
+            st.success("Conciliação finalizada!")
+            st.write("## Resultados da Conciliação")
             col1, col2, col3 = st.columns(3)
             col1.metric("Total na Fatura", f"R$ {total_f:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             col2.metric("Total no Mobills", f"R$ {total_m:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
             diff_str = f"R$ {difference:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            col3.metric("Diferen√ßa (Fatura - Mobills)", diff_str, delta="")
+            col3.metric("Diferença (Fatura - Mobills)", diff_str, delta="")
 
             st.write(
                 """
-                **Lan√ßamentos presentes na fatura mas ausentes no Mobills:**
-                Estes devem ser lan√ßados no Mobills ou questionados junto ao banco se n√£o forem devidos.
+                **Lançamentos presentes na fatura mas ausentes no Mobills:**
+                Estes devem ser lançados no Mobills ou questionados junto ao banco se não forem devidos.
                 """
             )
             st.dataframe(unmatched_f.drop(columns=["_date", "_value", "_matched"], errors="ignore"), use_container_width=True)
 
             st.write(
                 """
-                **Lan√ßamentos presentes no Mobills mas ausentes na fatura:**
-                Estes podem ter sido lan√ßamentos duplicados ou agendados que ainda n√£o ca√≠ram na fatura. Verifique se faz sentido mant√™-los.
+                **Lançamentos presentes no Mobills mas ausentes na fatura:**
+                Estes podem ter sido lançamentos duplicados ou agendados que ainda não caíram na fatura. Verifique se faz sentido mantê-los.
                 """
             )
             st.dataframe(unmatched_m.drop(columns=["_date", "_value", "_matched"], errors="ignore"), use_container_width=True)
@@ -303,26 +303,26 @@ def main():
             csv_unmatched_f = unmatched_f.to_csv(index=False).encode("utf-8")
             csv_unmatched_m = unmatched_m.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="‚¨áÔ∏è Baixar inconsist√™ncias da Fatura", data=csv_unmatched_f, file_name="fatura_nao_conciliada.csv", mime="text/csv"
+                label="⬇️ Baixar inconsistências da Fatura", data=csv_unmatched_f, file_name="fatura_nao_conciliada.csv", mime="text/csv"
             )
             st.download_button(
-                label="‚¨áÔ∏è Baixar inconsist√™ncias do Mobills", data=csv_unmatched_m, file_name="mobills_nao_conciliado.csv", mime="text/csv"
+                label="⬇️ Baixar inconsistências do Mobills", data=csv_unmatched_m, file_name="mobills_nao_conciliado.csv", mime="text/csv"
             )
 
             st.markdown(
                 """
-                _Obs.: Caso os totais ainda n√£o coincidam ap√≥s os ajustes, verifique se h√° lan√ßamentos parcelados
-                com datas futuras ou se a fatura exportada corresponde ao mesmo per√≠odo dos lan√ßamentos do Mobills._
+                _Obs.: Caso os totais ainda não coincidam após os ajustes, verifique se há lançamentos parcelados
+                com datas futuras ou se a fatura exportada corresponde ao mesmo período dos lançamentos do Mobills._
                 """
             )
         else:
             st.info("Selecione as colunas e clique em \"Conciliar\" para iniciar o cruzamento.")
     elif (fatura_file is not None) ^ (mobills_file is not None):
-        st.warning("Envie ambos os arquivos para prosseguir com a concilia√ß√£o.")
+        st.warning("Envie ambos os arquivos para prosseguir com a conciliação.")
 
     # Footer
     st.markdown("""---
-    Desenvolvido com ‚ù§Ô∏è para simplificar sua vida financeira.
+    Desenvolvido com ❤️ para simplificar sua vida financeira.
     """)
 
 
