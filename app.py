@@ -234,9 +234,10 @@ def main():
         """
     )
 
-    st.sidebar.header("🗂️ Upload de Arquivos")
-    fatura_file = st.sidebar.file_uploader("Fatura do cartão", type=["csv", "xls", "xlsx", "pdf"])
-    mobills_file = st.sidebar.file_uploader("Relatório do Mobills", type=["csv", "xls", "xlsx", "pdf"])
+    # Sidebar: labels without accents to avoid encoding issues
+    st.sidebar.header("Upload de Arquivos")
+    fatura_file = st.sidebar.file_uploader("Fatura do cartao", type=["csv", "xls", "xlsx", "pdf"])
+    mobills_file = st.sidebar.file_uploader("Relatorio do Mobills", type=["csv", "xls", "xlsx", "pdf"])
 
     df_fatura, df_mobills = None, None
 
@@ -246,7 +247,7 @@ def main():
             df_fatura = extract_transactions_from_pdf(fatura_file)
         else:
             df_fatura = parse_csv_or_excel(fatura_file)
-        st.write("### Pré‑visualização da Fatura", df_fatura.head())
+        st.write("### Pre-visualizacao da Fatura", df_fatura.head())
 
     if mobills_file is not None:
         ext = mobills_file.name.lower().split(".")[-1]
@@ -254,11 +255,11 @@ def main():
             df_mobills = extract_transactions_from_pdf(mobills_file)
         else:
             df_mobills = parse_csv_or_excel(mobills_file)
-        st.write("### Pré‑visualização do Mobills", df_mobills.head())
+        st.write("### Pre-visualizacao do Mobills", df_mobills.head())
 
     # If both dataframes exist, allow column selection
     if df_fatura is not None and df_mobills is not None and not df_fatura.empty and not df_mobills.empty:
-        st.sidebar.header("🛠️ Configuração de Colunas")
+        st.sidebar.header("Configuracao de Colunas")
         # Attempt to detect columns automatically
         default_date_f = detect_column(df_fatura, ["data", "date", "dia"])
         default_value_f = detect_column(df_fatura, ["valor", "value", "amount"])
@@ -270,10 +271,48 @@ def main():
         date_col_m = st.sidebar.selectbox("Coluna de Data (Mobills)", df_mobills.columns, index=(df_mobills.columns.tolist().index(default_date_m) if default_date_m in df_mobills.columns else 0))
         value_col_m = st.sidebar.selectbox("Coluna de Valor (Mobills)", df_mobills.columns, index=(df_mobills.columns.tolist().index(default_value_m) if default_value_m in df_mobills.columns else 1 if df_mobills.shape[1] > 1 else 0))
 
+        # Identify negative values in the fatura (possible payment of previous month)
+        # Only compute after the user selects which columns correspond to date and value
+        try:
+            # Apply numeric conversion to detect negatives
+            tmp_vals = df_fatura[value_col_f].apply(normalise_numeric)
+            negatives_df = df_fatura[tmp_vals < 0]
+        except Exception:
+            negatives_df = pd.DataFrame()
+
+        ignore_indices: list[int] = []
+        if not negatives_df.empty:
+            # Build labels for the sidebar multiselect
+            neg_options = []
+            for idx, row in negatives_df.iterrows():
+                # Use date and value for display
+                try:
+                    date_label = str(row[date_col_f])
+                except Exception:
+                    date_label = ""
+                val_label = str(row[value_col_f])
+                # Include a description column if present
+                desc = ""
+                for col_name in ["Descricao", "Descrição", "Estabelecimento", "Descricao"]:
+                    if col_name in df_fatura.columns:
+                        desc = str(row[col_name])
+                        break
+                label = f"{date_label} | {val_label}"
+                if desc:
+                    label += f" | {desc}"
+                neg_options.append(label)
+            selected_neg = st.sidebar.multiselect(
+                "Selecione valores negativos da fatura a ignorar (pagamento do mes anterior)", options=neg_options
+            )
+            # Map selected labels back to indices
+            ignore_indices = [negatives_df.index[i] for i, lbl in enumerate(neg_options) if lbl in selected_neg]
+
         if st.sidebar.button("Conciliar"):
             with st.spinner("Conciliando... Aguarde um momentinho enquanto alinhamos as estrelas 🔮"):
+                # Drop selected negative payment rows before reconciliation
+                df_fatura_filtered = df_fatura.drop(index=ignore_indices) if ignore_indices else df_fatura
                 unmatched_f, unmatched_m, total_f, total_m, difference = reconcile_transactions(
-                    df_fatura, df_mobills, date_col_f, value_col_f, date_col_m, value_col_m
+                    df_fatura_filtered, df_mobills, date_col_f, value_col_f, date_col_m, value_col_m
                 )
             st.success("Conciliação finalizada!")
             st.write("## Resultados da Conciliação")
@@ -322,7 +361,7 @@ def main():
 
     # Footer
     st.markdown("""---
-    Desenvolvido com ❤️ para simplificar sua vida financeira.
+    Desenvolvido com amor para simplificar sua vida financeira.
     """)
 
 
